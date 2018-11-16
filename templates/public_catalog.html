@@ -1,0 +1,35 @@
+<!-- Inherits the main template -->
+{% extends "main.html" %}
+{% block content %}
+<section class="col-md-12 content">
+	<section class="col-md-4 categoriesList">
+		<h4>Categories</h4>
+		<!-- Use Jinja2 to access the sent category list from python code,
+		iterate through categories and display clickable link for each -->
+		{% for cat in categories %}
+		<ul class="nav flex-column">
+			<li class="nav-item">
+				<a class="nav-link" href="{{url_for('viewCategory', category_name=cat.name)}}">{{cat.name}}</a>
+			</li>
+		</ul>
+		{% endfor %}
+	</section>
+
+	<section class="col-md-8">
+		<h4 id="itemsHeader">Latest Items</h4>
+		<ul class="nav" id="itemsDetails">
+			<!-- Iterate through latest added items, and display link for each -->
+			{% for item in items %}
+			<li>
+				<span class="latest">
+					<a class="nav-link" href="{{url_for('viewItem', category_name=item.Category.name, item_title=item.Item.title)}}">{{item.Item.title}}</a>
+					<!-- Display item's category name, and creation date and time -->
+					({{item.Category.name}}, added on {{item.Item.addition_dt}})
+				</span>
+			</li>
+			{% endfor %}
+		</ul>
+
+	</section>
+</section>
+{% endblock %}

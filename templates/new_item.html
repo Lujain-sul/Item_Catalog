@@ -1,0 +1,44 @@
+<!-- Inherits the main template -->
+{% extends "main.html" %}
+{% block content %}
+<section class="col-md-12 content">
+	<h2>Add Item</h2>
+	<!-- Display a form to add an item,
+	add validation functionality so that all fields are required -->
+	<form class="form-horizontal" action="#" method="post">
+		<section class="form-group">
+			<label class="control-label col-sm-2" for="title">Title:</label>
+			<article class="col-sm-10">
+				<input type="text" class="form-control" name="title" required>
+			</article>
+		</section>
+
+		<section class="form-group">
+			<label class="control-label col-sm-2" for="description">Description:</label>
+			<article class="col-sm-10">
+				<input type="textarea" class="form-control" name="description"" required>
+			</article>
+		</section>
+
+		<section class="form-group">
+			<label class="control-label col-sm-2" for="category">Category:</label>
+			<article class="col-sm-10">
+				<select class="bootstrap-select" name="category_id">
+					<!-- Diaplay a listbox from the sent categories -->
+					{% for cat in categories %}
+					<option value="{{cat.id}}">{{cat.name}}</option>
+					{% endfor %}
+				</select>
+			</article>
+		</section>
+
+		<!-- Submit button -->
+		<section class="form-group">
+			<article class="col-sm-offset-2 col-sm-10">
+				<button type="submit" class="btn btn-success">Add</button>
+			</article>
+		</section>
+
+	</form>
+</section>
+{% endblock %}

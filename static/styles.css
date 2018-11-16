@@ -1,0 +1,38 @@
+body {
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+header, section {
+	margin-top: 1.5em;
+	margin-bottom: 1.5em;
+	box-sizing: border-box;
+}
+
+header {
+	height: 90px;
+	border-bottom-style: solid;
+	border-bottom-width: 0.25em;
+  border-bottom-color: #7D97AD;
+}
+
+header section span {
+	font-size: 24px;
+}
+
+main {
+	background-color:#4E6880;
+}
+
+.content {
+	background-color:#FFFFFF;
+}
+
+.categoriesList {
+	border-right-style: solid;
+	border-rightright-width: 0.25em;
+  border-right-color: #7D97AD;
+}
+
+.latest {
+	color: #BBC0C4;
+}
