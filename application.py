@@ -8,7 +8,7 @@ from flask import jsonify, url_for, redirect, render_template, flash
 from flask import session as login_session
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker, scoped_session
-from database_setup import Base, Category, Item
+from database_setup import Base, Category, Item, User
 import random
 import string
 import datetime
@@ -35,7 +35,7 @@ CLIENT_ID = json.loads(open('client_secrets.json',
                             'r').read())['web']['client_id']
 
 
-# Implement JSON endpoint
+# Implement JSON endpoint for catalog
 @app.route('/catalog/JSON')
 def catalogJSON():
     # Get all categories from the database
@@ -46,6 +46,20 @@ def catalogJSON():
         i.serialize for i in c.items]) for c in categories])
     # Convert dictionary to JSON object and send it back as response to client
     return jsonify(catDictionary)
+
+
+# Implement JSON endpoint for item
+@app.route('/catalog/<int:category_id>/<int:item_id>/JSON')
+def itemJSON(category_id, item_id):
+    # Get the required item from the database
+    item = session.query(Item).filter_by(id=item_id).first()
+    if item is not None:
+        return jsonify(item.serialize)
+
+    # Item does not exist
+    response = make_response(json.dumps('Item does not exist.'), 401)
+    response.headers['Content-Type'] = 'application/json'
+    return response
 
 
 # Show catalog
@@ -77,7 +91,7 @@ def newItem():
     # After submit add item form
     if request.method == 'POST':
         # Check that there is no other item with same title
-        if find(request.form['title'], None):
+        if findItem(request.form['title'], None):
             # Use flash function to generate notifications
             flash('There exists an item with same title, nothing changed!')
             # Get the first category
@@ -91,7 +105,8 @@ def newItem():
                 title=request.form['title'],
                 description=request.form['description'],
                 category_id=request.form['category_id'],
-                addition_dt=datetime.datetime.now())
+                addition_dt=datetime.datetime.now(),
+                user_id=login_session['user_id'])
             # Add the item into the database and save the changes
             session.add(newItem)
             session.commit()
@@ -143,12 +158,18 @@ def editItem(item_title):
     itemCategory = session.query(Category).filter_by(
         id=editedItem.category_id).first()
 
+    # Check that the user is the creator of the item
+    if login_session['user_id'] != editedItem.user_id:
+        flash('You are not authorized to edit this item!')
+        return redirect(url_for('viewCategory',
+                                category_name=itemCategory.name))
+
     # After submit edit item form
     if request.method == 'POST':
         # Check that Post request contains title
         if request.form['title']:
             # Check that there is no other item with same title
-            if find(request.form['title'], editedItem.id):
+            if findItem(request.form['title'], editedItem.id):
                 flash('There exists an item with same title, nothing changed!')
                 return redirect(url_for('viewCategory',
                                         category_name=itemCategory.name))
@@ -163,7 +184,7 @@ def editItem(item_title):
         # Update item and save changes
         session.add(editedItem)
         session.commit()
-        flash('Item %s edited successfully' % (editedItem.title))
+        flash('Item %s edited successfully!' % (editedItem.title))
         # Category might be updated, get the new item category
         itemCategory = session.query(Category).filter_by(
             id=editedItem.category_id).first()
@@ -186,17 +207,24 @@ def deleteItem(item_title):
         return redirect('/login')
     # Get the item to be deleted
     deletedItem = session.query(Item).filter_by(title=item_title).first()
+
     # Get the category of the intended category,
     # to display it back to the client
     itemCategory = session.query(Category).filter_by(
         id=deletedItem.category_id).first()
+
+    # Check that the user is the creator of the item
+    if login_session['user_id'] != deletedItem.user_id:
+        flash('You are not authorized to delete this item!')
+        return redirect(url_for('viewCategory',
+                                category_name=itemCategory.name))
 
     # After submit delete item form
     if request.method == 'POST':
         # Delete the item and save changes
         session.delete(deletedItem)
         session.commit()
-        flash('Item %s deleted successfully' % (deletedItem.title))
+        flash('Item %s deleted successfully!' % (deletedItem.title))
         return redirect(url_for('viewCategory',
                                 category_name=itemCategory.name))
 
@@ -208,7 +236,7 @@ def deleteItem(item_title):
 # Check if item with same title already exists,
 # if similar item's titles exists,
 # there would be an issue in the routing for edit and delete
-def find(item_title, item_id):
+def findItem(item_title, item_id):
     if item_id is None:
         item = session.query(Item).filter_by(title=item_title).first()
     else:
@@ -252,7 +280,7 @@ def gconnect():
         credentials = oauth_flow.step2_exchange(code)
     except FlowExchangeError:
         response = make_response(
-            json.dumps('Failed to upgrade the authorization code'), 401)
+            json.dumps('Failed to upgrade the authorization code.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -272,14 +300,14 @@ def gconnect():
     gplus_id = credentials.id_token['sub']
     if result['user_id'] != gplus_id:
         response = make_response(
-            json.dumps("Token's user ID doesn't match given user ID"), 401)
+            json.dumps("Token's user ID doesn't match given user ID."), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
 
     # Verify that the access token is valid for this app
     if result['issued_to'] != CLIENT_ID:
         response = make_response(
-            json.dumps("Token's client ID does not match app's"), 401)
+            json.dumps("Token's client ID does not match app's."), 401)
         print("Token's client ID does not match app's")
         response.headers['Content-Type'] = 'application/json'
         return response
@@ -288,7 +316,7 @@ def gconnect():
     stored_gplus_id = login_session.get('gplus_id')
     if stored_access_token is not None and gplus_id == stored_gplus_id:
         response = make_response(json.dumps(
-            'Current user is already connected'), 200)
+            'Current user is already connected.'), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -304,10 +332,34 @@ def gconnect():
     data = answer.json()
 
     login_session['username'] = data['name']
-    login_session['picture'] = data['picture']
     login_session['email'] = data['email']
+
+    # Create the user if not exist
+    user_id = findUser(data["email"])
+    if not user_id:
+        user_id = addUser(login_session)
+    login_session['user_id'] = user_id
+
     flash("You are now logged in as %s" % login_session['username'])
     return 'Welcome %s' % (login_session['username'])
+
+
+# Create new user
+def addUser(login_session):
+    newUser = User(name=login_session['username'],
+                   email=login_session['email'])
+    session.add(newUser)
+    session.commit()
+    user = session.query(User).filter_by(email=login_session['email']).first()
+    return user.id
+
+
+# Check if the user already exists
+def findUser(email):
+    user = session.query(User).filter_by(email=email).first()
+    if user is not None:
+        return user.id
+    return None
 
 
 # lougout function from:
@@ -318,7 +370,7 @@ def gdisconnect():
     # Disconnect a connected user only
     if access_token is None:
         response = make_response(
-            json.dumps('Current user not connected'), 401)
+            json.dumps('Current user not connected.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
     url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
@@ -330,15 +382,15 @@ def gdisconnect():
         del login_session['access_token']
         del login_session['username']
         del login_session['email']
-        del login_session['picture']
-        response = make_response(json.dumps('Successfully disconnected'), 200)
+        del login_session['user_id']
+        response = make_response(json.dumps('Successfully disconnected.'), 200)
         response.headers['Content-Type'] = 'application/json'
-        flash("You have successfully been logged out")
+        flash("You have successfully been logged out.")
         # Send the response back to the client
         return response
     else:
         response = make_response(json.dumps(
-            'Failed to revoke token for given user', 400))
+            'Failed to revoke token for given user.', 400))
         response.headers['Content-Type'] = 'application/json'
         return response
 

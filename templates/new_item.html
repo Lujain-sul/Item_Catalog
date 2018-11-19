@@ -5,7 +5,7 @@
 	<h2>Add Item</h2>
 	<!-- Display a form to add an item,
 	add validation functionality so that all fields are required -->
-	<form class="form-horizontal" action="#" method="post">
+	<form class="form-horizontal" action="{{ url_for('newItem') }}" method="post">
 		<section class="form-group">
 			<label class="control-label col-sm-2" for="title">Title:</label>
 			<article class="col-sm-10">

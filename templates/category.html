@@ -4,19 +4,11 @@
 <section class="col-md-12 content">
 	<section class="col-md-4 categoriesList">
 		<h4>Categories</h4>
-		<!-- Iterate through sent categories and display a link for each,
-		clicking a category is handled by js showItems function,
-		which displays related items for the chosen category -->
+		<!-- Iterate through sent categories and display a link for each -->
 		{% for cat in categories %}
-		<!-- Create serialized list of items to be accessible by showItems function -->
-		{% set itemsList = [] %}
-		{% for i in cat.items %}
-		{% if itemsList.append(i.serialize) %}
-		{% endif %}
-		{% endfor %}
 		<ul class="nav flex-column">
-			<li class="nav-item" onClick="showItems({{ cat.serialize }}, {{ itemsList }})">
-				<a class="nav-link" href="#">{{cat.name}}</a>
+			<li class="nav-item">
+				<a class="nav-link" href="{{url_for('viewCategory', category_name=cat.name)}}">{{cat.name}}</a>
 			</li>
 		</ul>
 		{% endfor %}
@@ -36,8 +28,8 @@
 			{% endif %}
 			{% endwith %}
 		</div>
-		<h4 id="itemsHeader">{{category.name}} Items ({{category.items|length}} items)</h4>
-		<ul class="nav" id="itemsDetails">
+		<h4>{{category.name}} Items ({{category.items|length}} items)</h4>
+		<ul class="nav">
 			<!-- Iterate through items of the chosen category and display a link for each -->
 			{% for item in category.items %}
 			<li>

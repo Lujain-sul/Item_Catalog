@@ -3,7 +3,7 @@
 {% block content %}
 <section class="col-md-12 content">
 	<h2>Delete Item</h2>
-	<form class="form-horizontal" action="#" method="post">
+	<form class="form-horizontal" action="{{ url_for('deleteItem', item_title = item.title) }}" method="post">
 		<section class="form-group">
 			<article class="col-sm-10">
 				<!-- Confirmation of delete action -->

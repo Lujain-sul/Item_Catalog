@@ -5,7 +5,7 @@
 # Import nedded modules
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database_setup import Base, Category, Item
+from database_setup import Base, Category, Item, User
 import datetime
 
 # Connect to catalog database
@@ -17,6 +17,15 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 # Add data to database
+
+User1 = User(name="Lujain Sul", email="lujain.sul@gmail.com")
+session.add(User1)
+session.commit()
+
+User2 = User(name="Lujain Ghul", email="lujain.ghul@gmail.com")
+session.add(User2)
+session.commit()
+
 # Category for Soccer
 category1 = Category(name="Soccer")
 session.add(category1)
@@ -24,12 +33,14 @@ session.commit()
 
 category1_item1 = Item(title="Soccer Cleats", description="The shoes",
                        addition_dt=datetime.datetime(2018, 11, 1, 1, 0),
+                       user=User1,
                        category=category1)
 session.add(category1_item1)
 session.commit()
 
 category1_item2 = Item(title="Jersey", description="The shirt",
                        addition_dt=datetime.datetime(2018, 11, 2, 10, 0),
+                       user=User1,
                        category=category1)
 session.add(category1_item2)
 session.commit()
@@ -48,6 +59,7 @@ session.commit()
 
 category3_item1 = Item(title="Bat", description="The bat",
                        addition_dt=datetime.datetime(2018, 11, 2, 3, 0),
+                       user=User2,
                        category=category3)
 session.add(category3_item1)
 session.commit()
@@ -67,6 +79,7 @@ session.commit()
 category5_item1 = Item(title="Snowboard",
                        description="TBest for any terrain and conditions.",
                        addition_dt=datetime.datetime(2018, 11, 5, 1, 0),
+                       user=User2,
                        category=category5)
 session.add(category5_item1)
 session.commit()

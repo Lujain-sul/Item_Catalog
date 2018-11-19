@@ -32,32 +32,5 @@
 			{% endblock %}
 		</section>
 	</main>
-	<script>
-	/*
-	When the user click any category in the navigation bar,
-	display the related items accordingly
-	*/
-	function showItems(cat, items) {
-		if (items != null) {
-			// Display category name
-			var header = document.getElementById("itemsHeader")
-			header.innerHTML = cat.name + " Items " + "(" + items.length + " items)"
-			var details = document.getElementById("itemsDetails")
-			// Clear previous content of items list
-			details.innerHTML = ""
-			// Create a list of clickable links, which represents category items,
-			// each link will refer to the item details page
-			items.forEach((i) => {
-				var listItemElm = document.createElement("li")
-				var linkElm = document.createElement("a")
-				linkElm.innerHTML = i.title
-				linkElm.href = '/catalog/' + cat.name + '/' + i.title + '/'
-				linkElm.class = "nav-link"
-				listItemElm.appendChild(linkElm)
-				details.appendChild(listItemElm)
-			})
-		}
-	}
-</script>
 </body>
 </html>
